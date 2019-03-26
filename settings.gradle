@@ -1,0 +1,5 @@
+rootProject.name = 'string-replace'
+include(
+        'javac-string-replace-plugin',
+        'sample'
+)

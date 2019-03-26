@@ -1,0 +1,8 @@
+dependencies {
+    annotationProcessor(
+            project(':javac-string-replace-plugin')
+    )
+    compileOnly(
+            project(':javac-string-replace-plugin')
+    )
+}

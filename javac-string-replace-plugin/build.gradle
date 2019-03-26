@@ -1,0 +1,5 @@
+dependencies {
+    compile(
+            'net.bytebuddy:byte-buddy:1.9.11'
+    )
+}

@@ -1,0 +1,69 @@
+subprojects {
+    group = 'rip.deadcode.string-replace'
+    version = '0.1.0-SNAPSHOT'
+
+    apply plugin: 'java'
+    apply plugin: 'jacoco'
+
+    repositories {
+        mavenCentral()
+        maven {
+            url = "https://dl.bintray.com/minebreaker/test"
+        }
+    }
+
+    dependencies {
+        testCompile(
+                'org.junit.jupiter:junit-jupiter-api:5.4.1',
+                'com.google.truth:truth:0.43',
+                'com.google.truth.extensions:truth-java8-extension:0.43',
+                'org.mockito:mockito-core:2.25.1',
+//            'com.google.jimfs:jimfs:1.1',
+                'rip.deadcode:izvestia:0.3',
+
+                'org.slf4j:jul-to-slf4j:1.7.25', // Guava uses java.util.logging
+                'ch.qos.logback:logback-classic:1.2.3'
+        )
+        testRuntime 'org.junit.jupiter:junit-jupiter-engine:5.4.1'
+    }
+
+    task sourcesJar(type: Jar, dependsOn: classes) {
+        archiveClassifier.set('sources')
+        from sourceSets.main.allSource
+    }
+
+    task javadocJar(type: Jar, dependsOn: javadoc) {
+        archiveClassifier.set('javadoc')
+        from javadoc.destinationDir
+    }
+
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
+
+    compileJava {
+        options.encoding = 'UTF-8'
+    }
+
+    compileTestJava {
+        options.encoding = 'UTF-8'
+    }
+
+    artifacts {
+        archives jar
+        archives sourcesJar
+        archives javadocJar
+    }
+
+    test {
+        useJUnitPlatform()
+    }
+
+    jacocoTestReport {
+        reports {
+            xml.enabled = true
+            html.enabled = true
+        }
+    }
+
+    check.dependsOn(jacocoTestReport)
+}

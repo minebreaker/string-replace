@@ -1,0 +1,6 @@
+.gradle
+.idea
+javac-string-replace-plugin/build
+javac-string-replace-plugin/out
+sample/build
+sample/out
