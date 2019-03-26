@@ -13,7 +13,7 @@ import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.element.VariableElement;
+import javax.lang.model.type.TypeKind;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.ResourceBundle;
@@ -52,15 +52,23 @@ public final class StringReplaceProcessor extends AbstractProcessor {
         TreeMaker treeMaker = TreeMaker.instance( context );
 
         for ( Element fieldElement : roundEnv.getElementsAnnotatedWith( Replace.class ) ) {
-            VariableElement fieldElement2 = (VariableElement) fieldElement;
 
-            JCTree.JCVariableDecl field = (JCTree.JCVariableDecl) trees.getPath( fieldElement2 ).getLeaf();
+            JCTree.JCVariableDecl field = (JCTree.JCVariableDecl) trees.getPath( fieldElement ).getLeaf();
 
+            // Look for the @Replace node
             //noinspection OptionalGetWithoutIsPresent  // Should have @Replace
-            JCTree.JCAnnotation replaceAnnotation = field.getModifiers().getAnnotations().stream()
-                                                         .filter( e -> types.isSameType( e.type, annotationElement.asType() ) )
-                                                         .findAny().get();
+            JCTree.JCAnnotation replaceAnnotation =
+                    field.getModifiers().getAnnotations().stream()
+                         .filter( e -> types.isSameType( e.type, annotationElement.asType() ) )
+                         .findAny().get();
+            // @Replace should have one and only one arg 'value'
             JCTree.JCAssign arg = (JCTree.JCAssign) replaceAnnotation.getArguments().get( 0 );
+            // TODO Should be able to handle non-literal values
+            if ( !( arg.getExpression() instanceof JCTree.JCLiteral ) ) {
+                message.error( "3" );
+                return false;
+            }
+
             String replaceKey = ( (JCTree.JCLiteral) arg.getExpression() ).value.toString().toLowerCase();
             String replacingValue = options.get( replaceKey );
             if ( replacingValue == null ) {
@@ -68,8 +76,7 @@ public final class StringReplaceProcessor extends AbstractProcessor {
                 return false;
             }
 
-            // TODO type check
-            field.init = treeMaker.at( field.init.pos ).Literal( replacingValue );
+            field.init = treeMaker.at( field.init.pos ).Literal( convert( fieldElement, replacingValue ) );
         }
 
         return true;
@@ -109,5 +116,43 @@ public final class StringReplaceProcessor extends AbstractProcessor {
         }
 
         return m.build();
+    }
+
+    private static Object convert( Element element, String value ) {
+
+        TypeKind kind = element.asType().getKind();
+
+        // TODO check if parsable
+        if ( kind.equals( TypeKind.BOOLEAN ) ) {
+            return Boolean.parseBoolean( value );
+
+        } else if ( kind.equals( TypeKind.SHORT ) ) {
+            return Short.parseShort( value );
+
+        } else if ( kind.equals( TypeKind.INT ) ) {
+            return Integer.parseInt( value );
+
+        } else if ( kind.equals( TypeKind.LONG ) ) {
+            return Long.parseLong( value );
+
+        } else if ( kind.equals( TypeKind.CHAR ) ) {
+            char[] chars = value.toCharArray();
+            checkState( chars.length == 1 );  // TODO error message
+            return chars[0];
+
+        } else if ( kind.equals( TypeKind.FLOAT ) ) {
+            return Float.parseFloat( value );
+
+        } else if ( kind.equals( TypeKind.DOUBLE ) ) {
+            return Double.parseDouble( value );
+
+        } else if ( kind.equals( TypeKind.DECLARED ) ) {  // Class or interface
+            checkState( element.asType().toString().equals( "java.lang.String" ) );  // TODO error message
+            return value;
+
+            // Should treat null as a special case?
+        } else {
+            throw new RuntimeException();
+        }
     }
 }
