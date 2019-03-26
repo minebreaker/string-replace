@@ -1,5 +1,25 @@
+def javaHome = System.getenv("JAVA_HOME") ?: System.getProperty("java.home")
+
 dependencies {
-    compile(
-            'net.bytebuddy:byte-buddy:1.9.11'
+    compile('com.google.guava:guava:27.0.1-jre')
+    // Required for Java 8 or smaller
+    compileOnly(
+            files("${javaHome}/lib/tools.jar")
     )
 }
+
+// For Java 9 or larger
+//compileJava {
+//    compileJava {
+//        options.compilerArgs = [
+//                '--add-exports', 'jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED',
+//                '--add-exports', 'jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED',
+//                '--add-exports', 'jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED',
+//                '--add-exports', 'jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED',
+//                '--add-exports', 'jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED',
+//                '--add-exports', 'jdk.compiler/com.sun.tools.javac.code.type=ALL-UNNAMED',
+//
+//                '--add-exports', 'jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED'
+//        ]
+//    }
+//}
