@@ -6,3 +6,7 @@ dependencies {
             project(':javac-string-replace-plugin')
     )
 }
+
+compileJava {
+    options.compilerArgs += ['-Arip.deadcode.javac.stringreplace.properties=version=0.1.0']
+}

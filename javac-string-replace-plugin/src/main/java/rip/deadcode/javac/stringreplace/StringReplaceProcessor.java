@@ -1,8 +1,6 @@
 package rip.deadcode.javac.stringreplace;
 
-import com.sun.source.tree.ClassTree;
-import com.sun.source.tree.Tree;
-import com.sun.source.util.TreeScanner;
+import com.google.common.collect.ImmutableMap;
 import com.sun.source.util.Trees;
 import com.sun.tools.javac.model.JavacTypes;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
@@ -13,12 +11,15 @@ import com.sun.tools.javac.util.Context;
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
+import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
-import javax.tools.Diagnostic;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.Set;
+
+import static com.google.common.base.Preconditions.checkState;
 
 
 public final class StringReplaceProcessor extends AbstractProcessor {
@@ -29,13 +30,20 @@ public final class StringReplaceProcessor extends AbstractProcessor {
             return false;
         }
 
-        ResourceBundle resourceBundle = Toolbox.getInstance().get( ResourceBundle.class );
+        // Should only have @Replace
+        assert annotations.size() == 1;
+        TypeElement annotationElement = annotations.iterator().next();
 
-        if ( !processingEnv.getOptions().containsKey( PROPERTY_KEY ) ) {
-            processingEnv.getMessager().printMessage(
-                    Diagnostic.Kind.ERROR, resourceBundle.getString( "rip.deadcode.javac.stringreplace.1" ) );
+        ResourceBundle resourceBundle = Toolbox.getInstance().get( ResourceBundle.class );
+        MessagerHelper message = new MessagerHelper( processingEnv.getMessager(), resourceBundle );
+
+        String rawOptions = processingEnv.getOptions().get( PROPERTY_KEY );
+        if ( rawOptions == null ) {
+            message.error( "1" );
             return false;
         }
+
+        Map<String, String> options = getOptions( rawOptions );
 
         JavacProcessingEnvironment p = (JavacProcessingEnvironment) processingEnv;
         JavacTypes types = p.getTypeUtils();
@@ -43,43 +51,26 @@ public final class StringReplaceProcessor extends AbstractProcessor {
         Context context = p.getContext();
         TreeMaker treeMaker = TreeMaker.instance( context );
 
-        annotations.forEach( annotation -> {
-            roundEnv.getRootElements().forEach( element -> {
-                trees.getPath( element ).getCompilationUnit().accept( new TreeScanner<Object, Object>() {
-                    @Override
-                    public Object visitClass( ClassTree node, Object o ) {
+        for ( Element fieldElement : roundEnv.getElementsAnnotatedWith( Replace.class ) ) {
+            VariableElement fieldElement2 = (VariableElement) fieldElement;
 
-                        node.getMembers().stream()
-                            .filter( e -> e.getKind().equals( Tree.Kind.VARIABLE ) )
-                            .map( e -> (JCTree.JCVariableDecl) e )
-                            .filter( f -> f.getModifiers().getAnnotations().stream()
-                                           .anyMatch( e -> types.isSameType( e.type, annotation.asType() ) ) )
-                            .forEach( field -> {
+            JCTree.JCVariableDecl field = (JCTree.JCVariableDecl) trees.getPath( fieldElement2 ).getLeaf();
 
-                                JCTree.JCAnnotation replace = field.getModifiers().getAnnotations().stream()
-                                                                   .filter( e -> types.isSameType( e.type, annotation.asType() ) )
-                                                                   .findAny()
-                                                                   .get();
-                                JCTree.JCAssign arg = (JCTree.JCAssign) replace.getArguments().get( 0 );
-                                JCTree.JCLiteral argValue = (JCTree.JCLiteral) arg.getExpression();
-                                System.out.println( argValue.value );
-                                System.out.println( argValue.value.equals( "VERSION" ) );
+            //noinspection OptionalGetWithoutIsPresent  // Should have @Replace
+            JCTree.JCAnnotation replaceAnnotation = field.getModifiers().getAnnotations().stream()
+                                                         .filter( e -> types.isSameType( e.type, annotationElement.asType() ) )
+                                                         .findAny().get();
+            JCTree.JCAssign arg = (JCTree.JCAssign) replaceAnnotation.getArguments().get( 0 );
+            String replaceKey = ( (JCTree.JCLiteral) arg.getExpression() ).value.toString().toLowerCase();
+            String replacingValue = options.get( replaceKey );
+            if ( replacingValue == null ) {
+                message.error( "2", replaceKey );
+                return false;
+            }
 
-                                roundEnv.getElementsAnnotatedWith( Replace.class ).forEach( e -> {
-                                    VariableElement e2 = (VariableElement) e;
-                                    System.out.println( e2.asType() );
-                                    System.out.println( trees.getPath( e2 ).getLeaf() );
-                                } );
-
-
-                                field.init = treeMaker.at( field.init.pos ).Literal( "Ypa!!!" );
-                            } );
-
-                        return super.visitClass( node, o );
-                    }
-                }, null );
-            } );
-        } );
+            // TODO type check
+            field.init = treeMaker.at( field.init.pos ).Literal( replacingValue );
+        }
 
         return true;
     }
@@ -100,5 +91,23 @@ public final class StringReplaceProcessor extends AbstractProcessor {
         Set<String> s = new HashSet<>();
         s.add( PROPERTY_KEY );
         return s;
+    }
+
+    private static Map<String, String> getOptions( String raw ) {
+
+        String[] pairs = raw.split( "," );
+
+        ImmutableMap.Builder<String, String> m = ImmutableMap.builder();
+
+        for ( String pair : pairs ) {
+            int commaPos = pair.indexOf( '=' );
+            checkState( commaPos >= 0 );
+
+            String key = pair.substring( 0, commaPos ).toLowerCase();
+            String value = pair.substring( commaPos + 1 );
+            m.put( key, value );
+        }
+
+        return m.build();
     }
 }

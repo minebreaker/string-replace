@@ -5,7 +5,7 @@ import rip.deadcode.javac.stringreplace.Replace;
 
 public final class Main {
 
-    @Replace( "FOO" )
+    @Replace( "VERSION" )
     private static final String VERSION = "";
 
     public static void main( String[] args ) {
