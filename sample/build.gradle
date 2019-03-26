@@ -7,8 +7,12 @@ dependencies {
     )
 }
 
-def commitHash = "0123abc"
-
 compileJava {
+
+    def git = "git rev-parse HEAD".execute()
+    def exitCode = git.waitFor()
+    if (exitCode != 0) throw new RuntimeException('' + exitCode)
+    def commitHash = git.text.trim()
+
     options.compilerArgs += ["-Arip.deadcode.javac.stringreplace.properties=version=${version},commit_hash=${commitHash}"]
 }
