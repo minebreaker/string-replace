@@ -1,25 +1,38 @@
-def javaHome = System.getenv("JAVA_HOME") ?: System.getProperty("java.home")
+def javaHome = Objects.requireNonNull(System.getenv("JAVA_HOME") ?: System.getProperty("java.home"))
 
 dependencies {
     compile('com.google.guava:guava:27.0.1-jre')
     // Required for Java 8 or smaller
-    compileOnly(
-            files("${javaHome}/lib/tools.jar")
-    )
+    if (!useModule) {
+        compileOnly(
+                files("${javaHome}/lib/tools.jar")
+        )
+    }
 }
 
-// For Java 9 or larger
-//compileJava {
-//    compileJava {
-//        options.compilerArgs = [
-//                '--add-exports', 'jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED',
-//                '--add-exports', 'jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED',
-//                '--add-exports', 'jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED',
-//                '--add-exports', 'jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED',
-//                '--add-exports', 'jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED',
-//                '--add-exports', 'jdk.compiler/com.sun.tools.javac.code.type=ALL-UNNAMED',
-//
-//                '--add-exports', 'jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED'
-//        ]
-//    }
-//}
+if (useModule) {
+    compileJava {
+        options.compilerArgs = [
+                '--add-exports', 'jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED',
+                '--add-exports', 'jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED',
+                '--add-exports', 'jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED',
+                '--add-exports', 'jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED',
+                '--add-exports', 'jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED',
+                '--add-exports', 'jdk.compiler/com.sun.tools.javac.code.type=ALL-UNNAMED',
+                '--add-exports', 'jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED'
+        ]
+    }
+
+    javadoc {
+        options.addMultilineStringsOption("-add-exports").setValue([
+                'jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED',
+                'jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED',
+                'jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED',
+                'jdk.compiler/com.sun.tools.javac.model=ALL-UNNAMED',
+                'jdk.compiler/com.sun.tools.javac.code=ALL-UNNAMED',
+                'jdk.compiler/com.sun.tools.javac.code.type=ALL-UNNAMED',
+                'jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED'
+        ])
+    }
+
+}

@@ -1,3 +1,7 @@
+ext {
+    useModule = false
+}
+
 subprojects {
     group = 'rip.deadcode.string-replace'
     version = '0.1.0-SNAPSHOT'
@@ -37,8 +41,8 @@ subprojects {
         from javadoc.destinationDir
     }
 
-    sourceCompatibility = 1.8
-    targetCompatibility = 1.8
+    sourceCompatibility = useModule ? 1.11 : 1.8
+    targetCompatibility = useModule ? 1.11 : 1.8
 
     compileJava {
         options.encoding = 'UTF-8'
