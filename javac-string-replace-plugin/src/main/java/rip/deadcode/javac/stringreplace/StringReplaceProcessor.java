@@ -100,6 +100,13 @@ public final class StringReplaceProcessor extends AbstractProcessor {
         return s;
     }
 
+    /**
+     * Parse option string to {@code Map}.
+     * Example: {@code key1=value1,key2=value2}
+     *
+     * @param raw String option
+     * @return Parsed options
+     */
     private static Map<String, String> getOptions( String raw ) {
 
         String[] pairs = raw.split( "," );
@@ -118,6 +125,13 @@ public final class StringReplaceProcessor extends AbstractProcessor {
         return m.build();
     }
 
+    /**
+     * Convert {@link String} value to the appropriate value for the field represented by the {@link Element}.
+     *
+     * @param element Field element which the value should be converted to the type of
+     * @param value The value to convert
+     * @return Converted value
+     */
     private static Object convert( Element element, String value ) {
 
         TypeKind kind = element.asType().getKind();

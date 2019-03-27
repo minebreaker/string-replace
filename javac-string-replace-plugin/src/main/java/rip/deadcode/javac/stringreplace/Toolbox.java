@@ -6,6 +6,9 @@ import com.google.common.collect.MutableClassToInstanceMap;
 import java.util.ResourceBundle;
 
 
+/**
+ * Dependency holder class.
+ */
 public final class Toolbox {
 
     private static final class Holder {
@@ -13,6 +16,7 @@ public final class Toolbox {
     }
 
     private Toolbox() {
+        // Amazon Corretto 11.0.2_9 fails this, which seems to be the bug
         set( ResourceBundle.class, ResourceBundle.getBundle( "messages" ) );
     }
 
