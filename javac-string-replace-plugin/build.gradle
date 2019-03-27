@@ -34,5 +34,4 @@ if (useModule) {
                 'jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED'
         ])
     }
-
 }
