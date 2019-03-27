@@ -20,6 +20,7 @@ import java.util.ResourceBundle;
 import java.util.Set;
 
 import static com.google.common.base.Preconditions.checkState;
+import static rip.deadcode.javac.stringreplace.ReplacerException.check;
 
 
 public final class StringReplaceProcessor extends AbstractProcessor {
@@ -30,53 +31,52 @@ public final class StringReplaceProcessor extends AbstractProcessor {
             return false;
         }
 
-        // Should only have @Replace
-        assert annotations.size() == 1;
-        TypeElement annotationElement = annotations.iterator().next();
-
         ResourceBundle resourceBundle = Toolbox.getInstance().get( ResourceBundle.class );
         MessagerHelper message = new MessagerHelper( processingEnv.getMessager(), resourceBundle );
 
-        String rawOptions = processingEnv.getOptions().get( PROPERTY_KEY );
-        if ( rawOptions == null ) {
-            message.error( "1" );
+        try {
+
+            // Should only have @Replace
+            assert annotations.size() == 1;
+            TypeElement annotationElement = annotations.iterator().next();
+
+            String rawOptions = processingEnv.getOptions().get( PROPERTY_KEY );
+            check( rawOptions != null, "1" );
+
+            Map<String, String> options = getOptions( rawOptions );
+
+            JavacProcessingEnvironment p = (JavacProcessingEnvironment) processingEnv;
+            JavacTypes types = p.getTypeUtils();
+            Trees trees = Trees.instance( p );
+            Context context = p.getContext();
+            TreeMaker treeMaker = TreeMaker.instance( context );
+
+            for ( Element fieldElement : roundEnv.getElementsAnnotatedWith( Replace.class ) ) {
+
+                // Get the field node annotated by @Replace
+                JCTree.JCVariableDecl field = (JCTree.JCVariableDecl) trees.getPath( fieldElement ).getLeaf();
+
+                // Look for the @Replace node
+                //noinspection OptionalGetWithoutIsPresent  // Should have @Replace
+                JCTree.JCAnnotation replaceAnnotation =
+                        field.getModifiers().getAnnotations().stream()
+                             .filter( e -> types.isSameType( e.type, annotationElement.asType() ) )
+                             .findAny().get();
+                // @Replace should have one and only one arg 'value'
+                JCTree.JCAssign arg = (JCTree.JCAssign) replaceAnnotation.getArguments().get( 0 );
+                // TODO Should be able to handle non-literal values
+                check( arg.getExpression() instanceof JCTree.JCLiteral, "3" );
+
+                String replaceKey = ( (JCTree.JCLiteral) arg.getExpression() ).value.toString().toLowerCase();
+                String replacingValue = options.get( replaceKey );
+                check( replacingValue != null, "2", replaceKey );
+
+                field.init = treeMaker.at( field.init.pos ).Literal( convert( fieldElement, replacingValue ) );
+            }
+
+        } catch ( ReplacerException e ) {
+            message.error( e.getMessageKey(), e.getArgs() );
             return false;
-        }
-
-        Map<String, String> options = getOptions( rawOptions );
-
-        JavacProcessingEnvironment p = (JavacProcessingEnvironment) processingEnv;
-        JavacTypes types = p.getTypeUtils();
-        Trees trees = Trees.instance( p );
-        Context context = p.getContext();
-        TreeMaker treeMaker = TreeMaker.instance( context );
-
-        for ( Element fieldElement : roundEnv.getElementsAnnotatedWith( Replace.class ) ) {
-
-            JCTree.JCVariableDecl field = (JCTree.JCVariableDecl) trees.getPath( fieldElement ).getLeaf();
-
-            // Look for the @Replace node
-            //noinspection OptionalGetWithoutIsPresent  // Should have @Replace
-            JCTree.JCAnnotation replaceAnnotation =
-                    field.getModifiers().getAnnotations().stream()
-                         .filter( e -> types.isSameType( e.type, annotationElement.asType() ) )
-                         .findAny().get();
-            // @Replace should have one and only one arg 'value'
-            JCTree.JCAssign arg = (JCTree.JCAssign) replaceAnnotation.getArguments().get( 0 );
-            // TODO Should be able to handle non-literal values
-            if ( !( arg.getExpression() instanceof JCTree.JCLiteral ) ) {
-                message.error( "3" );
-                return false;
-            }
-
-            String replaceKey = ( (JCTree.JCLiteral) arg.getExpression() ).value.toString().toLowerCase();
-            String replacingValue = options.get( replaceKey );
-            if ( replacingValue == null ) {
-                message.error( "2", replaceKey );
-                return false;
-            }
-
-            field.init = treeMaker.at( field.init.pos ).Literal( convert( fieldElement, replacingValue ) );
         }
 
         return true;
