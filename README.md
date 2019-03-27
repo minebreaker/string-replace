@@ -26,3 +26,13 @@ class Target {
     public static String field = "value";
 }
 ```
+
+
+## Limitations
+
+It uses internal jdk packages, so can not be used with some JDK implementations(Eclipse ECJ?).
+
+
+## License
+
+MIT
