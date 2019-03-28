@@ -12,6 +12,9 @@ dependencies {
         compileOnly(
                 files(toolsJar)
         )
+        testRuntime(
+                files(toolsJar)
+        )
     }
 }
 
