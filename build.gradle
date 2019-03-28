@@ -1,5 +1,7 @@
 ext {
     useModule = false
+    addExportsToJavadoc = false
+    toolsJarPath = null
 }
 
 subprojects {

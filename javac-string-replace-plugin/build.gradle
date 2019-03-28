@@ -1,11 +1,16 @@
 def javaHome = Objects.requireNonNull(System.getenv("JAVA_HOME") ?: System.getProperty("java.home"))
+def toolsJar = toolsJarPath ?: "${javaHome}/lib/tools.jar"
+
+def jdkVersion = (int) Float.parseFloat(System.getProperty("java.class.version"))
+def isModuleJdk = jdkVersion >= 53  // class file 53 = Jva SE 9
+
 
 dependencies {
     compile('com.google.guava:guava:27.0.1-jre')
     // Required for Java 8 or smaller
     if (!useModule) {
         compileOnly(
-                files("${javaHome}/lib/tools.jar")
+                files(toolsJar)
         )
     }
 }
@@ -22,7 +27,9 @@ if (useModule) {
                 '--add-exports', 'jdk.compiler/com.sun.tools.javac.processing=ALL-UNNAMED'
         ]
     }
+}
 
+if (addExportsToJavadoc && isModuleJdk) {
     javadoc {
         options.addMultilineStringsOption("-add-exports").setValue([
                 'jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED',

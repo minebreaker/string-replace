@@ -1,11 +1,13 @@
 # Java String-replace annotation processor
 
-The annotation processor that replace the value of the filed which is annotated by `@Replace` at compile time.
+The annotation processor that replaces the value of the filed which is annotated by `@Replace` at compile time.
 
 
 ## Example
 
 See [https://github.com/minebreaker/string-replace/tree/master/sample]() for the detail
+
+In your Java source:
 
 ```java
 class Target {
@@ -13,6 +15,8 @@ class Target {
     public static String field = "";
 }
 ```
+
+Gradle:
 
 ```gradle
 compileJava.options.compilerArgs += ["-Arip.deadcode.javac.stringreplace.properties=key=value"]
