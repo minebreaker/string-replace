@@ -58,15 +58,16 @@ public static final String FIELD;
 public static final String FIELD = "default";
 ```
 
+#### `rip.deadcode.javac.stringreplace.checkStaticFinal`
 
-
+Checks if the field is `static` and `final`.
+This is generally a good practice.
+Set `false` to disable.
 
 
 ## TODO
 
 * tests
-* checkDefaultInitializer flag
-* checkFinal flag
 * escape for '=' and ','
 
 

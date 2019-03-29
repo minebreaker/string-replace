@@ -57,4 +57,41 @@ class StringReplaceProcessorTest {
         ).get();
         assertThat( resultFalse.getField( "LACKS_INITIALIZER" ).get( null ) ).isEqualTo( "value" );
     }
+
+    @Test
+    void testCheckFinal() throws Exception {
+
+        Optional<Class<?>> resultTruthy = Tester.compile(
+                "Test3",
+                ImmutableMap.of( "KEY_NON_FINAL", "value" )
+        );
+        assertThat( resultTruthy ).isEmpty();
+
+        //noinspection OptionalGetWithoutIsPresent
+        Class<?> resultFalse = Tester.compile(
+                "Test3",
+                ImmutableMap.of( "KEY_NON_FINAL", "value" ),
+                ImmutableList.of( "-Arip.deadcode.javac.stringreplace.checkStaticFinal=false" )
+        ).get();
+        assertThat( resultFalse.getField( "NON_FINAL" ).get( null ) ).isEqualTo( "value" );
+    }
+
+    @Test
+    void testCheckStatic() throws Exception {
+
+        Optional<Class<?>> resultTruthy = Tester.compile(
+                "Test4",
+                ImmutableMap.of( "KEY_NON_STATIC", "value" )
+        );
+        assertThat( resultTruthy ).isEmpty();
+
+        //noinspection OptionalGetWithoutIsPresent
+        Class<?> resultFalse = Tester.compile(
+                "Test4",
+                ImmutableMap.of( "KEY_NON_STATIC", "value" ),
+                ImmutableList.of( "-Arip.deadcode.javac.stringreplace.checkStaticFinal=false" )
+        ).get();
+        Object instance = resultFalse.getConstructor().newInstance();
+        assertThat( resultFalse.getField( "NON_STATIC" ).get( instance ) ).isEqualTo( "value" );
+    }
 }

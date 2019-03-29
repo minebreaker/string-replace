@@ -13,6 +13,7 @@ import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.RoundEnvironment;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
+import javax.lang.model.element.Modifier;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
 import java.util.Map;
@@ -27,6 +28,7 @@ public final class StringReplaceProcessor extends AbstractProcessor {
 
     private static final String PROPERTY_KEY = "rip.deadcode.javac.stringreplace.properties";
     private static final String REQUIRE_INITIALIZER_KEY = "rip.deadcode.javac.stringreplace.requireInitializer";
+    private static final String CHECK_STATIC_FINAL_KEY = "rip.deadcode.javac.stringreplace.checkStaticFinal";
 
     @Override public boolean process( Set<? extends TypeElement> annotations, RoundEnvironment roundEnv ) {
 
@@ -61,6 +63,11 @@ public final class StringReplaceProcessor extends AbstractProcessor {
                 String requireInitializerFlag = processingEnv.getOptions().get( REQUIRE_INITIALIZER_KEY );
                 if ( requireInitializerFlag == null || !requireInitializerFlag.equalsIgnoreCase( "false" ) ) {
                     check( field.init != null, "4", field.getName().toString() );
+                }
+                String checkStaticFinalFlag = processingEnv.getOptions().get( CHECK_STATIC_FINAL_KEY );
+                if ( checkStaticFinalFlag == null || !checkStaticFinalFlag.equalsIgnoreCase( "false" ) ) {
+                    Set<Modifier> flags = field.getModifiers().getFlags();
+                    check( flags.contains( Modifier.STATIC ) && flags.contains( Modifier.FINAL ), "5", field.getName().toString() );
                 }
 
                 // Look for the @Replace node
@@ -98,7 +105,7 @@ public final class StringReplaceProcessor extends AbstractProcessor {
     }
 
     @Override public Set<String> getSupportedOptions() {
-        return ImmutableSet.of( PROPERTY_KEY, REQUIRE_INITIALIZER_KEY );
+        return ImmutableSet.of( PROPERTY_KEY, REQUIRE_INITIALIZER_KEY, CHECK_STATIC_FINAL_KEY );
     }
 
     /**
