@@ -1,5 +1,9 @@
-def javaHome = Objects.requireNonNull(System.getenv("JAVA_HOME") ?: System.getProperty("java.home"))
-def toolsJar = toolsJarPath ?: "${javaHome}/lib/tools.jar"
+import java.nio.file.Files
+import java.nio.file.Paths
+
+def javaHome = Paths.get(System.getenv("JAVA_HOME") + "/../lib/tools.jar")
+def jvmHome = Paths.get(System.getProperty("java.home") + "/../lib/tools.jar")
+def toolsJar = toolsJarPath ?: Files.exists(javaHome) ? javaHome : Files.exists(jvmHome) ? jvmHome : null
 
 def jdkVersion = (int) Float.parseFloat(System.getProperty("java.class.version"))
 def isModuleJdk = jdkVersion >= 53  // class file 53 = Jva SE 9

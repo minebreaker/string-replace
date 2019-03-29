@@ -49,9 +49,6 @@ It uses internal jdk packages, so can not be used with some JDK implementations(
 ### IntelliJ tips
 
 * add `--add-exports` to javac settings for Java 9+ (c.f. `build.gradle`)
-* Updating to IDEA 2019.1 sets default test runner to Gradle. This can be problem.
-    * Somehow Gradle test runner fails to grab tools.jar. IDEA test runner will be fine.
-    * In that case, add tools.jar to project library manually.
 
 
 ## License
