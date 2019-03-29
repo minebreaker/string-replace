@@ -39,7 +39,7 @@ public final class Tester {
         };
 
         //FIXME current working directory
-        URL javFileUri = Tester.class.getResource( "/it/Test1.java" );
+        URL javFileUri = Tester.class.getResource( "/it/" + name + ".java" );
         List<File> files;
         try {
             files = ImmutableList.of( new File( javFileUri.toURI() ) );
@@ -58,7 +58,7 @@ public final class Tester {
 
         byte[] classFile = interruptingOutputStream.toByteArray();
 
-        return TestClassLoader.load( "Test1", classFile );
+        return TestClassLoader.load( name, classFile );
     }
 
     private static String serializeParams( Map<String, String> params ) {
