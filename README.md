@@ -32,6 +32,36 @@ class Target {
 ```
 
 
+## Options
+
+See [https://docs.oracle.com/en/java/javase/12/tools/javac.html]()
+
+
+#### `rip.deadcode.javac.stringreplace.properties`
+
+A comma separated list of the `$key=$value` pairs to replace the filed values.
+
+Example: `foo1=bar1,foo2=bar2`
+
+
+#### `rip.deadcode.javac.stringreplace.requireInitializer`
+
+Checks if an initializer(default value for the field) is set.
+This can be problematic, because the annotation processor is not used due to some misconfiguration, the lack of the initializer may cause a NPE.
+Set `false` to disable.
+
+```
+// Bad:
+public static final String FIELD;
+
+// Good:
+public static final String FIELD = "default";
+```
+
+
+
+
+
 ## TODO
 
 * tests

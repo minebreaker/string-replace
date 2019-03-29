@@ -11,14 +11,19 @@ import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
-import static com.google.common.truth.Truth.assertThat;
 import static java.util.stream.Collectors.joining;
 
 
 public final class Tester {
 
-    public static Class<?> compile( String name, Map<String, String> params ) {
+
+    public static Optional<Class<?>> compile( String name, Map<String, String> params ) {
+        return compile( name, params, ImmutableList.of() );
+    }
+
+    public static Optional<Class<?>> compile( String name, Map<String, String> params, List<String> options ) {
 
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         StandardJavaFileManager standardFileManager = compiler.getStandardFileManager( null, null, null );
@@ -49,16 +54,20 @@ public final class Tester {
         Iterable<? extends JavaFileObject> compilationUnits = standardFileManager.getJavaFileObjectsFromFiles( files );
 
         String stingParam = serializeParams( params );
-        List<String> optionList = ImmutableList.of( "-Arip.deadcode.javac.stringreplace.properties=" + stingParam );
+        List<String> optionList = ImmutableList.<String>builder()
+                .add( "-Arip.deadcode.javac.stringreplace.properties=" + stingParam )
+                .addAll( options )
+                .build();
 
         JavaCompiler.CompilationTask task = compiler.getTask( null, fileManager, null, optionList, null, compilationUnits );
         boolean result = task.call();
 
-        assertThat( result ).isTrue();
+        if ( !result ) {
+            return Optional.empty();
+        }
 
         byte[] classFile = interruptingOutputStream.toByteArray();
-
-        return TestClassLoader.load( name, classFile );
+        return Optional.of( TestClassLoader.load( name, classFile ) );
     }
 
     private static String serializeParams( Map<String, String> params ) {

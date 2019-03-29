@@ -1,6 +1,7 @@
 package rip.deadcode.javac.stringreplace;
 
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.sun.source.util.Trees;
 import com.sun.tools.javac.model.JavacTypes;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
@@ -14,7 +15,6 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeKind;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.ResourceBundle;
 import java.util.Set;
@@ -25,6 +25,9 @@ import static rip.deadcode.javac.stringreplace.ReplacerException.check;
 
 public final class StringReplaceProcessor extends AbstractProcessor {
 
+    private static final String PROPERTY_KEY = "rip.deadcode.javac.stringreplace.properties";
+    private static final String REQUIRE_INITIALIZER_KEY = "rip.deadcode.javac.stringreplace.requireInitializer";
+
     @Override public boolean process( Set<? extends TypeElement> annotations, RoundEnvironment roundEnv ) {
 
         if ( annotations.isEmpty() ) {
@@ -34,27 +37,31 @@ public final class StringReplaceProcessor extends AbstractProcessor {
         ResourceBundle resourceBundle = Toolbox.getInstance().get( ResourceBundle.class );
         MessagerHelper message = new MessagerHelper( processingEnv.getMessager(), resourceBundle );
 
+        JavacProcessingEnvironment p = (JavacProcessingEnvironment) processingEnv;
+        JavacTypes types = p.getTypeUtils();
+        Trees trees = Trees.instance( p );
+        Context context = p.getContext();
+        TreeMaker treeMaker = TreeMaker.instance( context );
+
         try {
 
             // Should only have @Replace
             assert annotations.size() == 1;
             TypeElement annotationElement = annotations.iterator().next();
 
-            String rawOptions = processingEnv.getOptions().get( PROPERTY_KEY );
-            check( rawOptions != null, "1" );
-
-            Map<String, String> options = getOptions( rawOptions );
-
-            JavacProcessingEnvironment p = (JavacProcessingEnvironment) processingEnv;
-            JavacTypes types = p.getTypeUtils();
-            Trees trees = Trees.instance( p );
-            Context context = p.getContext();
-            TreeMaker treeMaker = TreeMaker.instance( context );
+            String rawProperties = processingEnv.getOptions().get( PROPERTY_KEY );
+            check( rawProperties != null, "1" );
+            Map<String, String> properties = getProperties( rawProperties );
 
             for ( Element fieldElement : roundEnv.getElementsAnnotatedWith( Replace.class ) ) {
 
                 // Get the field node annotated by @Replace
-                JCTree.JCVariableDecl field = (JCTree.JCVariableDecl) trees.getPath( fieldElement ).getLeaf();
+                JCTree.JCVariableDecl field = (JCTree.JCVariableDecl) trees.getTree( fieldElement );
+
+                String requireInitializerFlag = processingEnv.getOptions().get( REQUIRE_INITIALIZER_KEY );
+                if ( requireInitializerFlag == null || !requireInitializerFlag.equalsIgnoreCase( "false" ) ) {
+                    check( field.init != null, "4", field.getName().toString() );
+                }
 
                 // Look for the @Replace node
                 //noinspection OptionalGetWithoutIsPresent  // Should have @Replace
@@ -68,10 +75,10 @@ public final class StringReplaceProcessor extends AbstractProcessor {
                 check( arg.getExpression() instanceof JCTree.JCLiteral, "3" );
 
                 String replaceKey = ( (JCTree.JCLiteral) arg.getExpression() ).value.toString().toLowerCase();
-                String replacingValue = options.get( replaceKey );
+                String replacingValue = properties.get( replaceKey );
                 check( replacingValue != null, "2", replaceKey );
 
-                field.init = treeMaker.at( field.init.pos ).Literal( convert( fieldElement, replacingValue ) );
+                field.init = treeMaker.Literal( convert( fieldElement, replacingValue ) );
             }
 
         } catch ( ReplacerException e ) {
@@ -87,17 +94,11 @@ public final class StringReplaceProcessor extends AbstractProcessor {
     }
 
     @Override public Set<String> getSupportedAnnotationTypes() {
-        Set<String> s = new HashSet<>();
-        s.add( Replace.class.getCanonicalName() );
-        return s;
+        return ImmutableSet.of( Replace.class.getCanonicalName() );
     }
 
-    private static final String PROPERTY_KEY = "rip.deadcode.javac.stringreplace.properties";
-
     @Override public Set<String> getSupportedOptions() {
-        Set<String> s = new HashSet<>();
-        s.add( PROPERTY_KEY );
-        return s;
+        return ImmutableSet.of( PROPERTY_KEY, REQUIRE_INITIALIZER_KEY );
     }
 
     /**
@@ -107,7 +108,7 @@ public final class StringReplaceProcessor extends AbstractProcessor {
      * @param raw String option
      * @return Parsed options
      */
-    private static Map<String, String> getOptions( String raw ) {
+    private static Map<String, String> getProperties( String raw ) {
 
         String[] pairs = raw.split( "," );
 
@@ -177,5 +178,13 @@ public final class StringReplaceProcessor extends AbstractProcessor {
         } else {
             throw new RuntimeException( "Unknown type: " + kind );
         }
+    }
+
+    private static boolean equalsIgnoreCase( String a, String b ) {
+        if ( a == null || b == null ) {
+            return false;  // This method is not for general purpose, ignore the case both are null.
+        }
+
+        return a.equalsIgnoreCase( b );
     }
 }
