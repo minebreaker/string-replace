@@ -186,12 +186,4 @@ public final class StringReplaceProcessor extends AbstractProcessor {
             throw new RuntimeException( "Unknown type: " + kind );
         }
     }
-
-    private static boolean equalsIgnoreCase( String a, String b ) {
-        if ( a == null || b == null ) {
-            return false;  // This method is not for general purpose, ignore the case both are null.
-        }
-
-        return a.equalsIgnoreCase( b );
-    }
 }
