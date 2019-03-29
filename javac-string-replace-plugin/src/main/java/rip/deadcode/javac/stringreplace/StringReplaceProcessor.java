@@ -128,6 +128,8 @@ public final class StringReplaceProcessor extends AbstractProcessor {
     /**
      * Convert {@link String} value to the appropriate value for the field represented by the {@link Element}.
      *
+     * TODO error message
+     *
      * @param element Field element which the value should be converted to the type of
      * @param value The value to convert
      * @return Converted value
@@ -140,8 +142,15 @@ public final class StringReplaceProcessor extends AbstractProcessor {
         if ( kind.equals( TypeKind.BOOLEAN ) ) {
             return Boolean.parseBoolean( value );
 
+            // TypeKind byte/short/char must be cast to int
+            // This may be related to the JVM spec §4.7.2
+            // https://docs.oracle.com/javase/specs/jvms/se12/html/jvms-4.html#jvms-4.7.2
+
+        } else if ( kind.equals( TypeKind.BYTE ) ) {
+            return (int) Byte.parseByte( value );
+
         } else if ( kind.equals( TypeKind.SHORT ) ) {
-            return Short.parseShort( value );
+            return (int) Short.parseShort( value );
 
         } else if ( kind.equals( TypeKind.INT ) ) {
             return Integer.parseInt( value );
@@ -149,24 +158,24 @@ public final class StringReplaceProcessor extends AbstractProcessor {
         } else if ( kind.equals( TypeKind.LONG ) ) {
             return Long.parseLong( value );
 
-        } else if ( kind.equals( TypeKind.CHAR ) ) {
-            char[] chars = value.toCharArray();
-            checkState( chars.length == 1 );  // TODO error message
-            return chars[0];
-
         } else if ( kind.equals( TypeKind.FLOAT ) ) {
             return Float.parseFloat( value );
 
         } else if ( kind.equals( TypeKind.DOUBLE ) ) {
             return Double.parseDouble( value );
 
+        } else if ( kind.equals( TypeKind.CHAR ) ) {
+            char[] chars = value.toCharArray();
+            checkState( chars.length == 1 );
+            return (int) chars[0];
+
         } else if ( kind.equals( TypeKind.DECLARED ) ) {  // Class or interface
-            checkState( element.asType().toString().equals( "java.lang.String" ) );  // TODO error message
+            checkState( element.asType().toString().equals( "java.lang.String" ) );
             return value;
 
             // Should treat null as a special case?
         } else {
-            throw new RuntimeException();
+            throw new RuntimeException( "Unknown type: " + kind );
         }
     }
 }

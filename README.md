@@ -37,6 +37,7 @@ class Target {
 * tests
 * checkDefaultInitializer flag
 * checkFinal flag
+* escape for '=' and ','
 
 
 ## Limitations
