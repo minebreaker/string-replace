@@ -49,3 +49,25 @@ if (addExportsToJavadoc && isModuleJdk) {
         ])
     }
 }
+
+bintray {
+    user = project.hasProperty('BINTRAY_USER') ? BINTRAY_USER : ''
+    key = project.hasProperty('BINTRAY_KEY') ? BINTRAY_KEY : ''
+    pkg {
+        repo = 'test'
+        name = 'string-replace'
+        licenses = ['MIT']
+        vcsUrl = 'https://github.com/minebreaker/string-replace.git'
+    }
+    publications = ['bintrayPublication']
+}
+
+publishing {
+    publications {
+        bintrayPublication(MavenPublication) {
+            from components.java
+            artifact sourcesJar
+            artifact javadocJar
+        }
+    }
+}

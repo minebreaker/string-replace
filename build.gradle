@@ -4,12 +4,25 @@ ext {
     toolsJarPath = null
 }
 
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath(
+                'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.4'
+        )
+    }
+}
+
 subprojects {
     group = 'rip.deadcode.string-replace'
     version = '0.1.0-ALPHA'
 
     apply plugin: 'java'
     apply plugin: 'jacoco'
+    apply plugin: 'com.jfrog.bintray'
+    apply plugin: 'maven-publish'
 
     repositories {
         mavenCentral()
